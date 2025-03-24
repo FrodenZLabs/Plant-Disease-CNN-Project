@@ -21,7 +21,7 @@ const HeroSection = () => {
           your plants thriving!
         </p>
         <Button
-          href="/home"
+          href="/upload-image"
           className="mt-6 inline-block bg-green-500 text-white px-8 py-2 text-xl font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300"
         >
           🌱 Scan Your Plant Now

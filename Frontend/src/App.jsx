@@ -4,6 +4,9 @@ import "react-toastify/dist/ReactToastify.css";
 import LandingPage from "./pages/LandingPage";
 import NavbarPage from "./components/NavbarPage";
 import FooterPage from "./components/FooterPage";
+import UploadPage from "./pages/UploadPage";
+import AboutPage from "./pages/AboutPage";
+import ServicesPage from "./pages/ServicesPage";
 
 export default function App() {
   return (
@@ -12,6 +15,9 @@ export default function App() {
       <NavbarPage />
       <Routes>
         <Route path="" element={<LandingPage />} />
+        <Route path="/upload-image" element={<UploadPage />} />
+        <Route path="/about-us" element={<AboutPage />} />
+        <Route path="/services" element={<ServicesPage />} />
       </Routes>
       <FooterPage />
     </BrowserRouter>
