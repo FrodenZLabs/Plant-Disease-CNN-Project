@@ -75,7 +75,7 @@ const NavbarSection = () => {
               <DropdownItem as={Link} to="/profile">
                 Profile
               </DropdownItem>
-              <DropdownItem as={Link} to="/predictions">
+              <DropdownItem as={Link} to="/my-predictions">
                 My Predictions
               </DropdownItem>
               <DropdownDivider />

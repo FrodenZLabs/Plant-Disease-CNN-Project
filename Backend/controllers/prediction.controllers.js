@@ -57,6 +57,7 @@ export const uploadAndPredict = async (request, response, next) => {
         plant,
         disease,
         confidence: predictionResult.confidence,
+        isHealthy: disease.toLowerCase().includes("healthy"),
         diseaseInfo: {
           title: diseaseInfo.title,
           description: diseaseInfo.description,

@@ -23,3 +23,30 @@ export const predictImage = async (imageData) => {
     );
   }
 };
+
+export const fetchUserPrediction = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/predict/get_predictions`, {
+      withCredentials: true,
+    });
+
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.errorMessage;
+  }
+};
+
+export const fetchUserPredictionByID = async (predictionId) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/api/predict/get_predictions/${predictionId}`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.errorMessage;
+  }
+};

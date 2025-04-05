@@ -42,6 +42,10 @@ const PredictionSchema = new mongoose.Schema(
       plant: { type: String, required: true },
       disease: { type: String, required: true },
       confidence: { type: Number, required: true },
+      isHealthy: {
+        type: Boolean,
+        required: true,
+      },
       diseaseInfo: {
         type: DiseaseInfoSchema,
         required: true,

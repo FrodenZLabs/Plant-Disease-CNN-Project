@@ -10,6 +10,8 @@ import AboutPage from "./pages/AboutPage";
 import ServicePage from "./pages/ServicePage";
 import PredictionPage from "./pages/prediction/PredictionPage";
 import OnlyUserPrivateRoute from "./components/OnlyUserPrivateRoute";
+import MyPredictionsPage from "./pages/prediction/MyPredictionsPage";
+import PredictionDetailsPage from "./pages/prediction/PredictionDetailsPage";
 
 const App = () => {
   return (
@@ -26,6 +28,11 @@ const App = () => {
           <Route path="/services" element={<ServicePage />} />
           <Route element={<OnlyUserPrivateRoute />}>
             <Route path="/upload-image" element={<PredictionPage />} />
+            <Route path="/my-predictions" element={<MyPredictionsPage />} />
+            <Route
+              path="/my-predictions/:id"
+              element={<PredictionDetailsPage />}
+            />
           </Route>
         </Route>
       </Routes>
