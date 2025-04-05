@@ -61,7 +61,7 @@ def predict():
     
     predicted_label = CLASS_NAMES[result_index]
     
-    return jsonify({"prediction": str(predicted_label), "confidence": float(confidence)})
+    return jsonify({"prediction": predicted_label, "confidence": float(confidence)})
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)

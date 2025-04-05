@@ -1,6 +1,6 @@
 import { FaLeaf, FaCamera, FaBrain } from "react-icons/fa";
 
-const Features = () => {
+const FeaturesSection = () => {
   const features = [
     {
       icon: <FaLeaf />,
@@ -40,4 +40,4 @@ const Features = () => {
   );
 };
 
-export default Features;
+export default FeaturesSection;

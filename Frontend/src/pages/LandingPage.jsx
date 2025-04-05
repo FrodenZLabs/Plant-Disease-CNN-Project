@@ -1,12 +1,12 @@
-import Features from "../components/Features";
+import FeaturesSection from "../components/FeaturesSection";
 import HeroSection from "../components/HeroSection";
-import HowItWorks from "../components/HowItWorks";
+import HowItWorks from "../components/HowItWorls";
 
 const LandingPage = () => {
   return (
     <>
       <HeroSection />
-      <Features />
+      <FeaturesSection />
       <HowItWorks />
     </>
   );

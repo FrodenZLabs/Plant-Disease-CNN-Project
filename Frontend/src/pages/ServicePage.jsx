@@ -1,4 +1,4 @@
-const ServicesPage = () => {
+const ServicePage = () => {
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
       {/* Heading Section */}
@@ -82,4 +82,4 @@ const ServicesPage = () => {
   );
 };
 
-export default ServicesPage;
+export default ServicePage;
