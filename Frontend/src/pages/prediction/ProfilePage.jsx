@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import axios from "axios";
 import { toast } from "react-toastify";
-import { Spinner, Button, Modal, TextInput, Avatar } from "flowbite-react";
+import {
+  Spinner,
+  Button,
+  Modal,
+  TextInput,
+  Avatar,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "flowbite-react";
 import {
   FaEdit,
   FaSave,
@@ -12,6 +20,10 @@ import {
   FaLeaf,
   FaHistory,
 } from "react-icons/fa";
+import { deleteUser, getProfile, updateUser } from "../../services/userService";
+import { fetchUserPrediction } from "../../services/predictionService";
+import { useNavigate } from "react-router-dom";
+import { SyncLoader } from "react-spinners";
 
 const ProfilePage = () => {
   const { currentUser } = useSelector((state) => state.authentication);
@@ -20,32 +32,25 @@ const ProfilePage = () => {
   const [stats, setStats] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    avatar: null,
-  });
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [avatar, setAvatar] = useState("");
   const [previewAvatar, setPreviewAvatar] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        const [userResponse, statsResponse] = await Promise.all([
-          axios.get("http://localhost:8000/api/users/me", {
-            withCredentials: true,
-          }),
-          axios.get("http://localhost:8000/api/predictions/stats", {
-            withCredentials: true,
-          }),
-        ]);
+        const userResponse = await getProfile();
+        const statsResponse = await fetchUserPrediction();
 
-        setUserData(userResponse.data.user);
-        setFormData({
-          username: userResponse.data.user.username,
-          email: userResponse.data.user.email,
-        });
-        setStats(statsResponse.data);
+        setUserData(userResponse.rest);
+        setUsername(userResponse.rest.username || "");
+        setEmail(userResponse.rest.email || "");
+        setAvatar(userResponse.rest.user_profile || "");
+        setStats(statsResponse);
       } catch (error) {
         toast.error(
           error.response?.data?.error || "Failed to fetch profile data"
@@ -60,21 +65,21 @@ const ProfilePage = () => {
     }
   }, [currentUser]);
 
-  const handleInputChange = (e) => {
+  const handleUserChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    if (name === "username") {
+      setUsername(value);
+    } else if (name === "email") {
+      setEmail(value);
+    } else if (name === "password") {
+      setPassword(value);
+    }
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        avatar: file,
-      }));
+      setAvatar(file);
       setPreviewAvatar(URL.createObjectURL(file));
     }
   };
@@ -83,24 +88,35 @@ const ProfilePage = () => {
     e.preventDefault();
     try {
       setLoading(true);
+
+      // Create FormData object for file uploads
       const formDataToSend = new FormData();
-      formDataToSend.append("username", formData.username);
-      if (formData.avatar) {
-        formDataToSend.append("avatar", formData.avatar);
+
+      // Append only changed fields
+      if (username && username !== userData.username) {
+        formDataToSend.append("username", username);
+      }
+      if (email && email !== userData.email) {
+        formDataToSend.append("email", email);
+      }
+      if (password) {
+        formDataToSend.append("password", password);
+      }
+      if (avatar) {
+        // This is the File object from file input
+        formDataToSend.append("user_profile", avatar);
       }
 
-      const response = await axios.put(
-        "http://localhost:8000/api/users/update",
-        formDataToSend,
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      // Ensure at least one field is provided for the update
+      if (formDataToSend.keys().length === 0) {
+        toast.error("No fields provided for update.");
+        setLoading(false);
+        return;
+      }
 
-      setUserData(response.data.user);
+      const response = await updateUser(formDataToSend);
+
+      setUserData(response.user);
       setEditMode(false);
       toast.success("Profile updated successfully");
     } catch (error) {
@@ -113,12 +129,9 @@ const ProfilePage = () => {
   const handleDeleteAccount = async () => {
     try {
       setLoading(true);
-      await axios.delete("http://localhost:8000/api/users/delete", {
-        withCredentials: true,
-      });
+      await deleteUser();
       toast.success("Account deleted successfully");
-      // Redirect to home or handle logout
-      window.location.href = "/";
+      navigate("/register");
     } catch (error) {
       toast.error(error.response?.data?.error || "Failed to delete account");
     } finally {
@@ -127,45 +140,15 @@ const ProfilePage = () => {
     }
   };
 
-  if (!currentUser) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Please Sign In
-          </h2>
-          <p className="text-gray-600 mb-6">
-            You need to be signed in to view your profile.
-          </p>
-          <div className="flex justify-center gap-4">
-            <a
-              href="/sign-in"
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-            >
-              Sign In
-            </a>
-            <a
-              href="/sign-up"
-              className="px-4 py-2 border border-green-600 text-green-600 rounded-lg hover:bg-green-50 transition"
-            >
-              Sign Up
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading && !userData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <Spinner size="xl" color="success" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      {/* Full-screen loader */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black opacity-75 z-50">
+          <SyncLoader color="#ffcb00" size={40} />
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Profile Header */}
@@ -175,7 +158,7 @@ const ProfilePage = () => {
                 <div className="relative">
                   <Avatar
                     alt="User profile"
-                    img={previewAvatar || userData?.avatar || ""}
+                    img={previewAvatar || avatar}
                     rounded
                     size="xl"
                     className="border-4 border-white"
@@ -197,8 +180,8 @@ const ProfilePage = () => {
                     {editMode ? (
                       <TextInput
                         name="username"
-                        value={formData.username}
-                        onChange={handleInputChange}
+                        value={username}
+                        onChange={handleUserChange}
                         required
                       />
                     ) : (
@@ -209,8 +192,8 @@ const ProfilePage = () => {
                     {editMode ? (
                       <TextInput
                         name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
+                        value={email}
+                        onChange={handleUserChange}
                         disabled
                         className="bg-gray-100"
                       />
@@ -324,10 +307,7 @@ const ProfilePage = () => {
                     Permanently delete your account and all data
                   </p>
                 </div>
-                <Button
-                  color="failure"
-                  onClick={() => setShowDeleteModal(true)}
-                >
+                <Button color="red" onClick={() => setShowDeleteModal(true)}>
                   Delete Account
                 </Button>
               </div>
@@ -338,8 +318,8 @@ const ProfilePage = () => {
 
       {/* Delete Account Modal */}
       <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
-        <Modal.Header>Confirm Account Deletion</Modal.Header>
-        <Modal.Body>
+        <ModalHeader>Confirm Account Deletion</ModalHeader>
+        <ModalBody>
           <div className="space-y-4">
             <p className="text-red-500 font-medium">
               Warning: This action cannot be undone!
@@ -349,19 +329,15 @@ const ProfilePage = () => {
               Are you sure you want to proceed?
             </p>
           </div>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            color="failure"
-            onClick={handleDeleteAccount}
-            disabled={loading}
-          >
+        </ModalBody>
+        <ModalFooter>
+          <Button color="red" onClick={handleDeleteAccount} disabled={loading}>
             {loading ? "Deleting..." : "Yes, Delete My Account"}
           </Button>
           <Button color="light" onClick={() => setShowDeleteModal(false)}>
             Cancel
           </Button>
-        </Modal.Footer>
+        </ModalFooter>
       </Modal>
     </div>
   );

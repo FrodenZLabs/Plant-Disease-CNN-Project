@@ -13,14 +13,19 @@ import {
 import LeafGuardLogo from "../assets/LeafGuard AI.png";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { logoutUser } from "../services/userService";
+import { getProfile, logoutUser } from "../services/userService";
 import { toast } from "react-toastify";
 import { signoutSuccess } from "../redux/reducers/authSlice";
+import { useEffect, useState } from "react";
 
 const NavbarSection = () => {
   const { currentUser } = useSelector((state) => state.authentication);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [loading, setLoading] = useState(true);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatar, setAvatar] = useState("");
 
   const handleSignout = async () => {
     try {
@@ -33,6 +38,29 @@ const NavbarSection = () => {
       toast.error("An error occurred while trying to log out");
     }
   };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        setLoading(true);
+        const userResponse = await getProfile();
+
+        setUsername(userResponse.rest.username || "");
+        setEmail(userResponse.rest.email || "");
+        setAvatar(userResponse.rest.user_profile || "");
+      } catch (error) {
+        toast.error(
+          error.response?.data?.error || "Failed to fetch profile data"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentUser) {
+      fetchUserData();
+    }
+  }, [currentUser]);
 
   return (
     <div className="bg-[#08ab6f] px-6 py-3">
@@ -53,33 +81,30 @@ const NavbarSection = () => {
             <Dropdown
               arrowIcon={false}
               inline
-              label={
-                <Avatar
-                  alt="User settings"
-                  img={
-                    currentUser.avatar ||
-                    "https://flowbite.com/docs/images/people/profile-picture-5.jpg"
-                  }
-                  rounded
-                />
-              }
+              label={<Avatar alt="User settings" img={avatar} rounded />}
+              className="w-56"
             >
               <DropdownHeader>
-                <span className="block text-sm font-semibold">
-                  {currentUser.username || currentUser.email}
+                <span className="block text-sm">
+                  Username: <span className="underline italic">{username}</span>
                 </span>
                 <span className="block truncate text-sm font-medium">
-                  {currentUser.email}
+                  {email}
                 </span>
               </DropdownHeader>
-              <DropdownItem as={Link} to="/profile">
+              <DropdownDivider />
+              <DropdownItem as={Link} to="/get_profile">
                 Profile
               </DropdownItem>
               <DropdownItem as={Link} to="/my-predictions">
                 My Predictions
               </DropdownItem>
               <DropdownDivider />
-              <DropdownItem as={Link} onClick={handleSignout}>
+              <DropdownItem
+                as={Link}
+                onClick={handleSignout}
+                className="hover:bg-red-300 focus:bg-red-300"
+              >
                 Sign out
               </DropdownItem>
             </Dropdown>

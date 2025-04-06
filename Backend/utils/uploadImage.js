@@ -23,3 +23,27 @@ export const uploadSingle = async (request, response, next) => {
     next(error);
   }
 };
+
+export const uploadProfile = async (request, response, next) => {
+  try {
+    const image = request.file; // Extract the uploaded file
+
+    if (!image) {
+      return response
+        .status(400)
+        .json({ success: false, message: "No image provided" });
+    }
+
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(image.path, {
+      folder: "user_profiles",
+    });
+
+    // Attach the secure URL to the request object
+    request.imageUrl = result.secure_url;
+    next();
+  } catch (error) {
+    console.error("Cloudinary upload error:", error);
+    next(error);
+  }
+};

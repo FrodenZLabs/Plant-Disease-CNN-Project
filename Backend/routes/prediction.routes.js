@@ -1,6 +1,7 @@
 import express from "express";
 import { verifyToken } from "../utils/verifyUser.js";
 import {
+  deletePrediction,
   getPredictionById,
   getUserPredictions,
   uploadAndPredict,
@@ -19,5 +20,10 @@ router.post(
 );
 router.get("/get_predictions", verifyToken, getUserPredictions);
 router.get("/get_predictions/:predictionId", verifyToken, getPredictionById);
+router.delete(
+  "/delete_predictions/:predictionId",
+  verifyToken,
+  deletePrediction
+);
 
 export default router;

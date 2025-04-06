@@ -2,6 +2,7 @@ import Auth from "../models/auth.models.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { errorHandler } from "../utils/errorHandler.js";
+import Prediction from "../models/prediction.models.js";
 
 export const signup = async (request, response, next) => {
   try {
@@ -92,5 +93,111 @@ export const signout = (request, response, next) => {
     });
   } catch (error) {
     next(errorHandler(500, "Error signing out."));
+  }
+};
+
+export const getUserById = async (request, response, next) => {
+  const authId = request.user.id;
+  try {
+    const user = await Auth.findById(authId);
+    if (!user) {
+      return next(errorHandler(404, "User not found"));
+    }
+    const { password, ...rest } = user._doc;
+
+    response.status(200).json({ success: true, rest });
+  } catch (error) {
+    next(errorHandler(500, "Failed to fetch user", error));
+  }
+};
+
+export const updateUser = async (request, response, next) => {
+  const { username, email, password } = request.body;
+  const authId = request.user.id;
+
+  // Ensure the user can only update their own account
+  if (request.user.id !== authId) {
+    return next(errorHandler(401, "You can only update your own account!"));
+  }
+
+  try {
+    // Prepare the update object
+    const updateFields = {};
+
+    if (username) {
+      updateFields.username = username;
+    }
+    if (email) {
+      updateFields.email = email;
+    }
+    if (password) {
+      // Hash the password and add it to the updateFields object
+      updateFields.password = bcryptjs.hashSync(password, 10);
+    }
+    // Handle profile image upload if present
+    if (request.imageUrl) {
+      // First get current user to check for existing profile image
+      const currentUser = await Auth.findById(authId);
+
+      // Delete old image from Cloudinary if it's not the default
+      if (
+        currentUser.user_profile &&
+        !currentUser.user_profile.includes("imgs.search.brave.com")
+      ) {
+        const publicId = currentUser.user_profile
+          .split("/")
+          .pop()
+          .split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
+
+      updateFields.user_profile = request.imageUrl;
+    }
+
+    // Update the user
+    const updatedUser = await Auth.findByIdAndUpdate(authId, updateFields, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedUser) {
+      return next(errorHandler(404, "Auth not found"));
+    }
+
+    // Exclude sensitive fields from the response
+    const { password: hashedPassword, ...rest } = updatedUser._doc;
+
+    response.status(200).json({
+      success: true,
+      message: "User updated successfully.",
+      user: rest,
+    });
+  } catch (error) {
+    console.log(error);
+    next(errorHandler(500, "Error occurred while updating user."));
+  }
+};
+
+export const deleteUser = async (request, response, next) => {
+  try {
+    const authId = request.user.id;
+
+    // Allow admins or the user themselves to delete
+    if (!request.user.role === "admin" && request.user.id !== authId) {
+      return next(errorHandler(403, "You are not allowed to delete this user"));
+    }
+
+    // Delete all associated clients and guarantors
+    await Prediction.deleteMany({ authId });
+
+    // Delete the user
+    await Auth.findByIdAndDelete(authId);
+
+    response.status(200).json({
+      success: true,
+      message: "User and associated records deleted successfully",
+    });
+  } catch (error) {
+    next(errorHandler(500, "Failed to delete user"));
   }
 };

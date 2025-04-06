@@ -102,7 +102,21 @@ export const getUserPredictions = async (request, response, next) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    response.status(200).json({ success: true, predictions });
+    // Calculate total predictions count for this user
+    const totalPredictions = await Prediction.countDocuments({
+      authId: authId,
+    });
+
+    // Get the date of the most recent prediction (if any exist)
+    const lastPredictionDate =
+      predictions.length > 0 ? predictions[0].createdAt : null;
+
+    response.status(200).json({
+      success: true,
+      predictions,
+      totalPredictions,
+      lastPredictionDate,
+    });
   } catch (error) {
     console.error("Error fetching predictions:", error);
     next(errorHandler(500, "Failed to fetch predictions"));
@@ -134,5 +148,52 @@ export const getPredictionById = async (request, response, next) => {
   } catch (error) {
     console.error("Error fetching prediction:", error);
     next(errorHandler(500, "Failed to fetch prediction"));
+  }
+};
+
+// Delete a prediction
+export const deletePrediction = async (request, response, next) => {
+  try {
+    const predictionId = request.params.predictionId;
+    const authId = request.user.id;
+
+    const prediction = await Prediction.findById(predictionId);
+    if (!prediction) {
+      return next(errorHandler(404, "Prediction not found"));
+    }
+
+    // Check if user is admin OR the owner of the prediction
+    if (
+      request.user.role !== "admin" &&
+      prediction.authId.toString() !== authId
+    ) {
+      return next(
+        errorHandler(403, "You are not authorized to delete this prediction")
+      );
+    }
+
+    // Delete each image from Cloudinary and local storage
+    if (prediction.images && prediction.images.length > 0) {
+      for (const imageUrl of prediction.images) {
+        try {
+          // Extract public ID from Cloudinary URL
+          const publicId = imageUrl.split("/").pop().split(".")[0];
+
+          // Delete from Cloudinary
+          await cloudinary.uploader.destroy(publicId);
+        } catch (error) {
+          console.error(`Error deleting from Cloudinary: ${error.message}`);
+        }
+      }
+    }
+
+    await Prediction.findByIdAndDelete(predictionId);
+    response.status(200).json({
+      success: true,
+      message: "Prediction deleted successfully",
+    });
+  } catch (error) {
+    console.log(error);
+    next(errorHandler(500, "Failed to delete prediction", error));
   }
 };

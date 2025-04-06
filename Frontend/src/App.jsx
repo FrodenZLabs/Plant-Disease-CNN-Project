@@ -12,6 +12,7 @@ import PredictionPage from "./pages/prediction/PredictionPage";
 import OnlyUserPrivateRoute from "./components/OnlyUserPrivateRoute";
 import MyPredictionsPage from "./pages/prediction/MyPredictionsPage";
 import PredictionDetailsPage from "./pages/prediction/PredictionDetailsPage";
+import ProfilePage from "./pages/prediction/ProfilePage";
 
 const App = () => {
   return (
@@ -33,6 +34,7 @@ const App = () => {
               path="/my-predictions/:id"
               element={<PredictionDetailsPage />}
             />
+            <Route path="/get_profile" element={<ProfilePage />} />
           </Route>
         </Route>
       </Routes>

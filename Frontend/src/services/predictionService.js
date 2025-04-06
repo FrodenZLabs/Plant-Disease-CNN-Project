@@ -50,3 +50,18 @@ export const fetchUserPredictionByID = async (predictionId) => {
     throw error.response?.data?.errorMessage;
   }
 };
+
+export const deletePrediction = async (predictionId) => {
+  try {
+    const response = await axios.delete(
+      `${API_URL}/api/delete_predictions/${predictionId}`,
+      {
+        withCredentials: true,
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.errorMessage;
+  }
+};
