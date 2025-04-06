@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { Spinner, Button } from "flowbite-react";
+import {
+  Spinner,
+  Button,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "flowbite-react";
 import { FaArrowLeft, FaTrash } from "react-icons/fa";
-import { fetchUserPredictionByID } from "../../services/predictionService";
+import {
+  deletePrediction,
+  fetchUserPredictionByID,
+} from "../../services/predictionService";
 import { SyncLoader } from "react-spinners";
 
 const PredictionDetailsPage = () => {
@@ -13,6 +23,8 @@ const PredictionDetailsPage = () => {
   const [prediction, setPrediction] = useState([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPrediction = async () => {
@@ -33,6 +45,20 @@ const PredictionDetailsPage = () => {
       fetchPrediction();
     }
   }, [id, currentUser]);
+
+  const handleDeletePrediction = async () => {
+    try {
+      setDeleting(true);
+      await deletePrediction(id);
+      toast.success("Prediction deleted successfully");
+      navigate("/my-predictions");
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to delete prediction");
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -179,7 +205,11 @@ const PredictionDetailsPage = () => {
 
               {/* Actions */}
               <div className="flex justify-end space-x-4 border-t pt-4">
-                <Button color="failure" disabled={deleting}>
+                <Button
+                  color="red"
+                  onClick={() => setShowDeleteModal(true)}
+                  disabled={deleting}
+                >
                   {deleting ? (
                     <>
                       <Spinner size="sm" className="mr-2" />
@@ -193,13 +223,41 @@ const PredictionDetailsPage = () => {
                   )}
                 </Button>
                 <Link to="/upload-image">
-                  <Button color="success">Analyze Another Plant</Button>
+                  <Button color="green">Analyze Another Plant</Button>
                 </Link>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Delete Prediction Modal */}
+      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+        <ModalHeader>Confirm Prediction Deletion</ModalHeader>
+        <ModalBody>
+          <div className="space-y-4">
+            <p className="text-red-500 font-medium">
+              Warning: This action cannot be undone!
+            </p>
+            <p>
+              This prediction will be permanently deleted. Are you sure you want
+              to proceed?
+            </p>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="red"
+            onClick={handleDeletePrediction}
+            disabled={deleting}
+          >
+            {deleting ? "Deleting..." : "Yes, Delete Prediction"}
+          </Button>
+          <Button color="light" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 };

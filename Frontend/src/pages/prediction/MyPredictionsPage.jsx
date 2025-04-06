@@ -3,14 +3,26 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { FaSearch, FaTrash } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { fetchUserPrediction } from "../../services/predictionService";
+import {
+  deletePrediction,
+  fetchUserPrediction,
+} from "../../services/predictionService";
 import { SyncLoader } from "react-spinners";
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "flowbite-react";
 
 const MyPredictionsPage = () => {
   const { currentUser } = useSelector((state) => state.authentication);
   const [predictions, setPredictions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [predictionToDelete, setPredictionToDelete] = useState(null);
 
   useEffect(() => {
     const fetchPredictions = async () => {
@@ -31,6 +43,30 @@ const MyPredictionsPage = () => {
       fetchPredictions();
     }
   }, [currentUser]);
+
+  const handleDeletePrediction = async () => {
+    if (!predictionToDelete) return;
+
+    try {
+      setLoading(true);
+      await deletePrediction(predictionToDelete);
+      setPredictions(
+        predictions.filter((pred) => pred._id !== predictionToDelete)
+      );
+      toast.success("Prediction deleted successfully");
+    } catch (error) {
+      toast.error(error || "Failed to delete prediction");
+    } finally {
+      setLoading(false);
+      setShowDeleteModal(false);
+      setPredictionToDelete(null);
+    }
+  };
+
+  const openDeleteModal = (predictionId) => {
+    setPredictionToDelete(predictionId);
+    setShowDeleteModal(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -67,7 +103,7 @@ const MyPredictionsPage = () => {
               You haven't made any predictions yet. Try analyzing a plant image!
             </p>
             <Link
-              to="/predict"
+              to="/upload-image"
               className="inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
             >
               Analyze a Plant
@@ -87,7 +123,10 @@ const MyPredictionsPage = () => {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 right-2 bg-white bg-opacity-80 rounded-full p-2">
-                    <button className="text-red-500 hover:text-red-700 transition">
+                    <button
+                      onClick={() => openDeleteModal(prediction._id)}
+                      className="text-red-500 hover:text-red-700 transition"
+                    >
                       <FaTrash />
                     </button>
                   </div>
@@ -121,7 +160,7 @@ const MyPredictionsPage = () => {
                   </div>
                 </div>
                 <Link
-                  to={`/predictions/${prediction._id}`}
+                  to={`/my-predictions/${prediction._id}`}
                   className="block w-full py-2 bg-green-50 text-green-600 text-center font-medium hover:bg-green-100 transition"
                 >
                   View Details
@@ -131,6 +170,40 @@ const MyPredictionsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Prediction Modal */}
+      <Modal show={showDeleteModal} onClose={() => setShowDeleteModal(false)}>
+        <ModalHeader>Confirm Prediction Deletion</ModalHeader>
+        <ModalBody>
+          <div className="space-y-4">
+            <p className="text-red-500 font-medium">
+              Warning: This action cannot be undone!
+            </p>
+            <p>
+              This prediction will be permanently deleted. Are you sure you want
+              to proceed?
+            </p>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <Button
+            color="red"
+            onClick={handleDeletePrediction}
+            disabled={loading}
+          >
+            {loading ? "Deleting..." : "Yes, Delete Prediction"}
+          </Button>
+          <Button
+            color="light"
+            onClick={() => {
+              setShowDeleteModal(false);
+              setPredictionToDelete(null);
+            }}
+          >
+            Cancel
+          </Button>
+        </ModalFooter>
+      </Modal>
     </div>
   );
 };

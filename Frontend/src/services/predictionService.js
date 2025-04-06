@@ -54,7 +54,7 @@ export const fetchUserPredictionByID = async (predictionId) => {
 export const deletePrediction = async (predictionId) => {
   try {
     const response = await axios.delete(
-      `${API_URL}/api/delete_predictions/${predictionId}`,
+      `${API_URL}/api/predict/delete_predictions/${predictionId}`,
       {
         withCredentials: true,
       }
